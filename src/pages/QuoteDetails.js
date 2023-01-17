@@ -1,39 +1,61 @@
-import { Route, useParams } from "react-router-dom";
+import { Route, useParams, Link, useRouteMatch } from "react-router-dom";
 import Comments from "../components/comments/Comments";
 import HighlightedQuote from "../components/quotes/HighlightedQuote";
-
-const DUMMY_QUOTES = [
-  {
-    id: "q1",
-    author: "-Nelson Mandela",
-    text: "The greatest glory in living lies not in never falling, but in rising every time we fall.",
-  },
-  {
-    id: "q2",
-    author: "-Walt Disney",
-    text: "The way to get started is to quit talking and begin doing.",
-  },
-  {
-    id: "q3",
-    author: "-Steve Jobs",
-    text: "Your time is limited, so don't waste it living someone else's life. Don't be trapped by dogma – which is living with the results of other people's thinking.",
-  },
-];
+import useHttp from "../hooks/use-http";
+import { getSingleQuote } from "../lib/api";
+import LoadingSpinner from "../components/UI/LoadingSpinner";
+import { useEffect } from "react";
 
 const QuoteDetails = () => {
   const params = useParams();
+  const routeMatch = useRouteMatch();
+  console.log(routeMatch);
 
-  const quote = DUMMY_QUOTES.find((quote) => quote.id === params.quoteId);
+  const { quoteId } = params;
+  const {
+    sendRequest,
+    status,
+    data: loadedQuote,
+    error,
+  } = useHttp(getSingleQuote, true);
 
-  if (!quote) {
-    return <p>No quote found!</p>;
+  useEffect(() => {
+    sendRequest(quoteId);
+  }, [quoteId, sendRequest]);
+
+  if (status === "pending") {
+    return (
+      <div className="centered">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="centered">{error}</div>;
+  }
+
+  if (!loadedQuote.text) {
+    return (
+      <div className="centered">
+        <p>No quote text found!</p>
+      </div>
+    );
   }
 
   return (
     <>
-      <HighlightedQuote text={quote.text} author={quote.author} />
-      <Route path="quotes/:quoteId/comments"></Route>
-      <Comments />
+      <HighlightedQuote text={loadedQuote.text} author={loadedQuote.author} />
+      <Route path={routeMatch.path} exact>
+        <div className="centered">
+          <Link className="btn--flat" to={`${routeMatch.url}/comments`}>
+            Load Comments
+          </Link>
+        </div>
+      </Route>
+      <Route path={`${routeMatch.path}/comments`}>
+        <Comments />
+      </Route>
     </>
   );
 };

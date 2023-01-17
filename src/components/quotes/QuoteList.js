@@ -15,18 +15,23 @@ const sortQuotes = (quotes, ascending) => {
 const QuoteList = (props) => {
   const history = useHistory();
   const location = useLocation();
-
   const queryParams = new URLSearchParams(location.search);
 
   const isSortedAscending = queryParams.get("sort") === "asc";
 
   const changeSortingHandler = () => {
-    history.push("/quotes?sort=" + (isSortedAscending ? "desc" : "asc"));
+    history.push({
+      pathname: location.pathname,
+      search: `?sort=${isSortedAscending ? "desc" : "asc"}`,
+    });
 
-    return <div>changeSorting</div>;
+    //return <div>changeSorting</div>;
   };
 
-  const sortedQuotes = sortQuotes(props.quotes, isSortedAscending);
+  let sortedQuotes;
+  if (props.quotes) {
+    sortedQuotes = sortQuotes(props.quotes, isSortedAscending);
+  }
 
   return (
     <Fragment>
@@ -35,16 +40,18 @@ const QuoteList = (props) => {
           Sort {isSortedAscending ? "Descending" : "Ascending"}
         </button>
       </div>
-      <ul className={classes.list}>
-        {sortedQuotes.map((quote) => (
-          <QuoteItem
-            key={quote.id + quote.author}
-            id={quote.id}
-            author={quote.author}
-            text={quote.text}
-          />
-        ))}
-      </ul>
+      {sortedQuotes && (
+        <ul className={classes.list}>
+          {sortedQuotes.map((quote) => (
+            <QuoteItem
+              key={quote.id}
+              id={quote.id}
+              author={quote.author}
+              text={quote.text}
+            />
+          ))}
+        </ul>
+      )}
     </Fragment>
   );
 };
